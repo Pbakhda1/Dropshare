@@ -3,25 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>DropShare — QR + ChimeShare</title>
+  <title>DropShare — Share locally by link or chime</title>
   <link rel="stylesheet" href="styles.css" />
-  <!-- QR library (client-side) -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
 <body>
   <header class="topbar">
     <div class="container topbar-inner">
       <div class="brand">
-        <div class="logo">DS</div>
+        <div class="logo" aria-hidden="true">DS</div>
         <div class="brand-text">
           <div class="brand-name">DropShare</div>
-          <div class="brand-tag">Meeting Mode — share by QR or Chime</div>
+          <div class="brand-tag">Share files, links, and “ChimeShare” codes locally</div>
         </div>
       </div>
+
       <nav class="nav">
+        <a href="#how">How it works</a>
         <a href="#share">Share</a>
-        <a href="#broadcast">Broadcast</a>
-        <a href="#feed">Feed</a>
+        <a href="#chime">ChimeShare</a>
+        <a href="#feed">Local Feed</a>
+        <a href="#safety">Safety</a>
       </nav>
     </div>
   </header>
@@ -30,36 +31,57 @@
     <section class="hero">
       <div class="container hero-grid">
         <div class="hero-copy">
-          <h1>Share a work link instantly.</h1>
+          <h1>Drop files. Share links. Send a chime.</h1>
           <p class="subhead">
-            Post a link, then broadcast it to everyone in the room using
-            <strong>QR Share</strong> (best) or <strong>ChimeShare</strong> (sound code).
+            DropShare helps you connect locally (internet/mobile concept) to share documents, free resources,
+            and app links. Plus: <strong>ChimeShare</strong> lets someone download by decoding a short sound code.
           </p>
 
           <div class="cta-row">
-            <a class="btn primary" href="#share">Post a link</a>
-            <a class="btn ghost" href="#broadcast">Broadcast</a>
+            <a class="btn primary" href="#share">Start sharing</a>
+            <a class="btn ghost" href="#chime">Try ChimeShare</a>
           </div>
 
-          <div class="creator">Created by <strong>Parth Pankaj Bakhda</strong></div>
+          <div class="creator">
+            Created by <strong>Parth Pankaj Bakhda</strong>
+          </div>
 
           <div class="trust">
-            <div class="pill">✅ QR Share (screen)</div>
-            <div class="pill">✅ ChimeShare</div>
-            <div class="pill">✅ Everyone receives</div>
+            <div class="pill">✅ Files & links</div>
+            <div class="pill">✅ Local feed</div>
+            <div class="pill">✅ Share code</div>
+            <div class="pill">✅ ChimeShare (demo)</div>
           </div>
         </div>
 
         <div class="hero-card">
-          <div class="card-title">How it works in meetings</div>
+          <div class="card-title">What this demo includes</div>
           <ul class="checklist">
-            <li>You post a link → gets a code like DS-3F9KQ2</li>
-            <li>Tap “Show QR” → everyone scans</li>
-            <li>Or tap “Play chime” → others decode</li>
+            <li>Profile (name + radius demo)</li>
+            <li>Post files (stored locally in your browser)</li>
+            <li>Post links (open in new tab)</li>
+            <li>ChimeShare: play tones that encode a share code</li>
+            <li>ChimeShare: listen via mic and decode the code</li>
           </ul>
           <div class="note">
-            Flashlight cannot display QR shapes. QR must be shown on screen.
+            <strong>Note:</strong> Real “nearby discovery” needs a backend + secure storage + scanning + moderation.
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how" class="section">
+      <div class="container">
+        <div class="section-head">
+          <h2>How it works</h2>
+          <p>Share resources locally and safely.</p>
+        </div>
+
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-body"><h3>Create profile</h3><p>Name + radius (demo filter).</p></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-body"><h3>Post</h3><p>Upload a doc (demo) or share a trusted link.</p></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-body"><h3>Share</h3><p>Copy share code or play a chime to transmit it.</p></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-body"><h3>Receive</h3><p>Enter code manually or decode it by listening.</p></div></div>
         </div>
       </div>
     </section>
@@ -67,97 +89,149 @@
     <section id="share" class="section section-alt">
       <div class="container">
         <div class="section-head">
-          <h2>Post a link</h2>
-          <p>Paste a work link (doc/video/resource). Server saves it for everyone.</p>
+          <h2>Share something</h2>
+          <p>Create a post (file or link). Posts save in your browser (localStorage demo).</p>
         </div>
 
         <div class="workspace">
           <div class="panel">
-            <div class="panel-title">Your name</div>
+            <div class="panel-title">Your profile</div>
+
             <label class="label">Display name</label>
             <input id="nameInput" placeholder="Example: Parth" />
+
+            <label class="label">Discovery radius (miles) — demo</label>
+            <select id="radiusInput">
+              <option value="1">1 mile</option>
+              <option value="3">3 miles</option>
+              <option value="5" selected>5 miles</option>
+              <option value="10">10 miles</option>
+              <option value="25">25 miles</option>
+            </select>
+
             <div class="control-row">
-              <button class="btn primary" id="saveNameBtn">Save name</button>
+              <button class="btn primary" id="saveProfileBtn">Save profile</button>
+              <button class="btn" id="resetProfileBtn">Reset</button>
             </div>
-            <div class="callout" id="nameStatus"><strong>Status:</strong> Set your name to post links.</div>
+
+            <div class="callout" id="profileStatus">
+              <strong>Status:</strong> Create a profile to start posting.
+            </div>
           </div>
 
           <div class="panel">
-            <div class="panel-title">Create link post</div>
+            <div class="panel-title">Create a post</div>
 
-            <label class="label">Link URL</label>
-            <input id="linkUrl" placeholder="https://..." />
-
-            <label class="label">Title</label>
-            <input id="linkTitle" placeholder="Example: Q1 Roadmap Video" />
-
-            <label class="label">Tags (comma separated)</label>
-            <input id="linkTags" placeholder="example: meeting, roadmap, video" />
-
-            <label class="label">Description</label>
-            <textarea id="linkDesc" rows="4" placeholder="What is this link?"></textarea>
-
-            <div class="control-row">
-              <button class="btn primary" id="postLinkBtn" disabled>Post link</button>
-              <button class="btn" id="clearLinkBtn">Clear</button>
+            <div class="tabs">
+              <button class="tab active" data-tab="file">File</button>
+              <button class="tab" data-tab="link">Link</button>
             </div>
 
-            <div class="callout" id="postStatus"><strong>Status:</strong> Ready.</div>
+            <div id="fileTab" class="tab-panel">
+              <label class="label">Choose a file (demo)</label>
+              <input id="fileInput" type="file" />
+
+              <label class="label">Title</label>
+              <input id="fileTitle" placeholder="Example: Study notes PDF" />
+
+              <label class="label">Tags (comma separated)</label>
+              <input id="fileTags" placeholder="example: school, pdf, notes" />
+
+              <label class="label">Description</label>
+              <textarea id="fileDesc" rows="4" placeholder="Short description."></textarea>
+
+              <div class="control-row">
+                <button class="btn primary" id="postFileBtn" disabled>Post file</button>
+                <button class="btn" id="clearFileBtn">Clear</button>
+              </div>
+
+              <div class="tiny muted">
+                Demo stores the file locally in the browser. A real app would upload securely + scan.
+              </div>
+            </div>
+
+            <div id="linkTab" class="tab-panel hidden">
+              <label class="label">Link URL</label>
+              <input id="linkUrl" placeholder="Example: https://github.com/project (trusted)" />
+
+              <label class="label">Title</label>
+              <input id="linkTitle" placeholder="Example: Free open-source app" />
+
+              <label class="label">Tags (comma separated)</label>
+              <input id="linkTags" placeholder="example: app, tools, free" />
+
+              <label class="label">Description</label>
+              <textarea id="linkDesc" rows="4" placeholder="Explain what it is and why it’s useful."></textarea>
+
+              <div class="control-row">
+                <button class="btn primary" id="postLinkBtn" disabled>Post link</button>
+                <button class="btn" id="clearLinkBtn">Clear</button>
+              </div>
+
+              <div class="tiny muted">
+                Only post links you trust. Avoid unknown downloads.
+              </div>
+            </div>
+
+            <div class="callout" id="postStatus">
+              <strong>Status:</strong> Create a post after saving your profile.
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section id="broadcast" class="section">
+    <section id="chime" class="section">
       <div class="container">
         <div class="section-head">
-          <h2>Broadcast</h2>
-          <p>Share a code to everyone via QR or sound.</p>
+          <h2>ChimeShare</h2>
+          <p>Send a share code by sound. Receiver decodes with their microphone (demo).</p>
         </div>
 
         <div class="workspace">
           <div class="panel">
-            <div class="panel-title">Share code</div>
-            <label class="label">Enter a share code</label>
-            <input id="codeInput" placeholder="DS-XXXXXX" />
+            <div class="panel-title">Send a chime</div>
 
-            <div class="control-row">
-              <button class="btn primary" id="showQrBtn">Show QR</button>
-              <button class="btn" id="hideQrBtn" disabled>Hide QR</button>
-            </div>
-
-            <div class="qr-wrap hidden" id="qrWrap">
-              <canvas id="qrCanvas"></canvas>
-              <div class="tiny muted">People scan this QR to open the shared link instantly.</div>
-            </div>
-
-            <div class="divider"></div>
+            <label class="label">Enter a share code (or pick from feed)</label>
+            <input id="chimeCodeInput" placeholder="Example: DS-AB12CD" />
 
             <div class="control-row">
               <button class="btn primary" id="playChimeBtn">Play chime</button>
               <button class="btn" id="stopChimeBtn" disabled>Stop</button>
             </div>
 
-            <div class="callout" id="broadcastStatus"><strong>Status:</strong> Paste a code like DS-3F9KQ2.</div>
+            <div class="tiny muted">
+              Tip: turn up volume. Works best in a quiet room, 1–3 feet apart.
+            </div>
+
+            <div class="callout" id="chimeSendStatus">
+              <strong>Status:</strong> Paste a code like DS-XXXXXX, then play.
+            </div>
           </div>
 
           <div class="panel">
-            <div class="panel-title">Receive</div>
-            <label class="label">Paste code OR open from QR OR listen</label>
+            <div class="panel-title">Receive by listening</div>
 
             <div class="control-row">
               <button class="btn primary" id="listenBtn">Listen & decode</button>
               <button class="btn" id="stopListenBtn" disabled>Stop listening</button>
             </div>
 
-            <label class="label">Decoded / entered code</label>
-            <input id="decodedCode" placeholder="DS-XXXXXX" />
+            <label class="label">Decoded code</label>
+            <input id="decodedOutput" placeholder="Decoded code appears here" readonly />
 
             <div class="control-row">
-              <button class="btn primary" id="openFromCodeBtn">Open link</button>
+              <button class="btn primary" id="applyDecodedBtn" disabled>Find post</button>
+              <button class="btn" id="clearDecodedBtn">Clear</button>
             </div>
 
-            <div class="callout" id="receiveStatus"><strong>Status:</strong> Use QR for best reliability.</div>
+            <div class="callout" id="chimeRecvStatus">
+              <strong>Status:</strong> Click “Listen & decode” and allow microphone access.
+            </div>
+
+            <div class="tiny muted">
+              Browser must allow microphone. If it struggles, try manual entry instead.
+            </div>
           </div>
         </div>
       </div>
@@ -166,19 +240,85 @@
     <section id="feed" class="section section-alt">
       <div class="container">
         <div class="section-head">
-          <h2>Feed</h2>
-          <p>Latest shared links. Click one to auto-load its code into Broadcast.</p>
+          <h2>Local feed</h2>
+          <p>Search, filter, copy codes, and play a chime from any post.</p>
         </div>
 
         <div class="market-toolbar">
-          <div class="search">
-            <input id="searchInput" placeholder="Search feed (title/tags/desc/code)" />
+          <div class="filters">
+            <label class="select">
+              Type:
+              <select id="typeFilter">
+                <option value="all">All</option>
+                <option value="file">Files</option>
+                <option value="link">Links</option>
+              </select>
+            </label>
+
+            <label class="select">
+              Sort:
+              <select id="sortFilter">
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+                <option value="title">Title A→Z</option>
+              </select>
+            </label>
           </div>
-          <button class="btn" id="refreshBtn">Refresh</button>
-          <button class="btn" id="clearAllBtn">Clear all (demo)</button>
+
+          <div class="search">
+            <input id="searchInput" placeholder="Search posts (title, tags, description)" />
+          </div>
+        </div>
+
+        <div class="feed-meta">
+          <div class="pill small" id="radiusPill">Radius: —</div>
+          <div class="pill small" id="namePill">User: —</div>
+          <button class="btn" id="clearAllBtn">Clear all demo posts</button>
         </div>
 
         <div id="feedGrid" class="results-grid"></div>
+      </div>
+    </section>
+
+    <section id="safety" class="section">
+      <div class="container">
+        <div class="section-head">
+          <h2>Safety & rules</h2>
+          <p>Keep sharing helpful and safe content.</p>
+        </div>
+
+        <div class="rules-grid">
+          <div class="rule-card">
+            <h3>Allowed</h3>
+            <ul>
+              <li>Files you have rights to share</li>
+              <li>Free/open-source apps and resources</li>
+              <li>Local community docs and learning materials</li>
+            </ul>
+          </div>
+
+          <div class="rule-card">
+            <h3>Not allowed</h3>
+            <ul>
+              <li>Pirated/copyrighted downloads without permission</li>
+              <li>Malware, phishing links, suspicious installers</li>
+              <li>Passwords/IDs/private data dumps</li>
+            </ul>
+          </div>
+
+          <div class="rule-card">
+            <h3>Production upgrades</h3>
+            <ul>
+              <li>Accounts + secure storage + antivirus scanning</li>
+              <li>Moderation/reporting + reputation</li>
+              <li>Privacy-first location controls</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="callout">
+          <strong>Note:</strong> This demo is local-only. Real sharing requires backend, storage, scanning, and moderation.
+        </div>
       </div>
     </section>
 
@@ -189,9 +329,11 @@
           <div class="footer-sub">Created by Parth Pankaj Bakhda</div>
         </div>
         <div class="footer-links">
+          <a href="#how">How it works</a>
           <a href="#share">Share</a>
-          <a href="#broadcast">Broadcast</a>
-          <a href="#feed">Feed</a>
+          <a href="#chime">ChimeShare</a>
+          <a href="#feed">Local Feed</a>
+          <a href="#safety">Safety</a>
         </div>
       </div>
     </footer>

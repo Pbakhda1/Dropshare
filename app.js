@@ -1,50 +1,77 @@
-// DropShare Meeting Mode: server-backed links + QR Share + ChimeShare (sound sends code)
+/**
+ * DropShare demo:
+ * - Local profile + posts in localStorage
+ * - ChimeShare: encodes a share code into tones and decodes via microphone (simple demo)
+ *
+ * Important:
+ * - Sound decoding is not perfect; depends on environment and device.
+ * - For real product: use QR codes, BLE, WebRTC, or a server-based invite.
+ */
 
-const KEY_NAME = "dropshare_name_v1";
+const KEY_PROFILE = "dropshare_profile_v2";
+const KEY_POSTS = "dropshare_posts_v2";
 
+// Profile elements
 const nameInput = document.getElementById("nameInput");
-const saveNameBtn = document.getElementById("saveNameBtn");
-const nameStatus = document.getElementById("nameStatus");
+const radiusInput = document.getElementById("radiusInput");
+const saveProfileBtn = document.getElementById("saveProfileBtn");
+const resetProfileBtn = document.getElementById("resetProfileBtn");
+const profileStatus = document.getElementById("profileStatus");
 
+// Tabs
+const tabs = document.querySelectorAll(".tab");
+const fileTab = document.getElementById("fileTab");
+const linkTab = document.getElementById("linkTab");
+
+// File post
+const fileInput = document.getElementById("fileInput");
+const fileTitle = document.getElementById("fileTitle");
+const fileTags = document.getElementById("fileTags");
+const fileDesc = document.getElementById("fileDesc");
+const postFileBtn = document.getElementById("postFileBtn");
+const clearFileBtn = document.getElementById("clearFileBtn");
+
+// Link post
 const linkUrl = document.getElementById("linkUrl");
 const linkTitle = document.getElementById("linkTitle");
 const linkTags = document.getElementById("linkTags");
 const linkDesc = document.getElementById("linkDesc");
 const postLinkBtn = document.getElementById("postLinkBtn");
 const clearLinkBtn = document.getElementById("clearLinkBtn");
+
+// Status
 const postStatus = document.getElementById("postStatus");
 
-const codeInput = document.getElementById("codeInput");
-const showQrBtn = document.getElementById("showQrBtn");
-const hideQrBtn = document.getElementById("hideQrBtn");
-const qrWrap = document.getElementById("qrWrap");
-const qrCanvas = document.getElementById("qrCanvas");
-const broadcastStatus = document.getElementById("broadcastStatus");
+// Feed
+const typeFilter = document.getElementById("typeFilter");
+const sortFilter = document.getElementById("sortFilter");
+const searchInput = document.getElementById("searchInput");
+const feedGrid = document.getElementById("feedGrid");
+const radiusPill = document.getElementById("radiusPill");
+const namePill = document.getElementById("namePill");
+const clearAllBtn = document.getElementById("clearAllBtn");
 
+// ChimeShare
+const chimeCodeInput = document.getElementById("chimeCodeInput");
 const playChimeBtn = document.getElementById("playChimeBtn");
 const stopChimeBtn = document.getElementById("stopChimeBtn");
+const chimeSendStatus = document.getElementById("chimeSendStatus");
 
 const listenBtn = document.getElementById("listenBtn");
 const stopListenBtn = document.getElementById("stopListenBtn");
-const decodedCode = document.getElementById("decodedCode");
-const openFromCodeBtn = document.getElementById("openFromCodeBtn");
-const receiveStatus = document.getElementById("receiveStatus");
+const decodedOutput = document.getElementById("decodedOutput");
+const applyDecodedBtn = document.getElementById("applyDecodedBtn");
+const clearDecodedBtn = document.getElementById("clearDecodedBtn");
+const chimeRecvStatus = document.getElementById("chimeRecvStatus");
 
-const searchInput = document.getElementById("searchInput");
-const refreshBtn = document.getElementById("refreshBtn");
-const clearAllBtn = document.getElementById("clearAllBtn");
-const feedGrid = document.getElementById("feedGrid");
-
+// ---------- Utilities ----------
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, s => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
   }[s]));
 }
-function parseTags(str){
-  return str.split(",").map(s => s.trim()).filter(Boolean).slice(0,10);
-}
-function normalizeCode(code){
-  return String(code || "").trim().toUpperCase();
+function nowId(){
+  return String(Date.now()) + String(Math.floor(Math.random()*1000));
 }
 function formatTimeAgo(ts){
   const diff = Date.now() - ts;
@@ -55,32 +82,97 @@ function formatTimeAgo(ts){
   const days = Math.floor(hrs / 24);
   return `${days}d ago`;
 }
+function parseTags(str){
+  return str.split(",").map(s => s.trim()).filter(Boolean).slice(0, 10);
+}
+function randomMilesWithin(radius){
+  const r = Number(radius) || 5;
+  // keep within radius (demo)
+  return Math.max(0.1, (Math.random() * r)).toFixed(1);
+}
 
-function loadName(){
-  return localStorage.getItem(KEY_NAME) || "";
+function loadProfile(){
+  try{ return JSON.parse(localStorage.getItem(KEY_PROFILE) || "null"); }catch{ return null; }
 }
-function saveName(name){
-  localStorage.setItem(KEY_NAME, name);
+function saveProfile(profile){
+  localStorage.setItem(KEY_PROFILE, JSON.stringify(profile));
+}
+function loadPosts(){
+  try{ return JSON.parse(localStorage.getItem(KEY_POSTS) || "[]"); }catch{ return []; }
+}
+function savePosts(posts){
+  localStorage.setItem(KEY_POSTS, JSON.stringify(posts));
 }
 
-function refreshNameUI(){
-  const n = loadName();
-  nameInput.value = n;
-  postLinkBtn.disabled = !n;
-  nameStatus.innerHTML = n
-    ? `<strong>Status:</strong> Ready as <strong>${escapeHtml(n)}</strong>.`
-    : `<strong>Status:</strong> Set your name to post links.`;
+function setPostingEnabled(enabled){
+  postFileBtn.disabled = !enabled;
+  postLinkBtn.disabled = !enabled;
+  postStatus.innerHTML = enabled
+    ? "<strong>Status:</strong> Ready. Create a file or link post."
+    : "<strong>Status:</strong> Create a profile first to post.";
 }
-saveNameBtn.addEventListener("click", () => {
-  const n = nameInput.value.trim();
-  if(!n){
-    nameStatus.innerHTML = `<strong>Status:</strong> Please enter a name.`;
+
+function refreshProfileUI(){
+  const p = loadProfile();
+  if(!p){
+    profileStatus.innerHTML = "<strong>Status:</strong> Create a profile to start posting.";
+    radiusPill.textContent = "Radius: —";
+    namePill.textContent = "User: —";
+    setPostingEnabled(false);
     return;
   }
-  saveName(n);
-  refreshNameUI();
+  nameInput.value = p.name || "";
+  radiusInput.value = String(p.radius || "5");
+  profileStatus.innerHTML = `<strong>Status:</strong> Signed in as <strong>${escapeHtml(p.name)}</strong> • Radius ${p.radius} mi (demo)`;
+  radiusPill.textContent = `Radius: ${p.radius} mi`;
+  namePill.textContent = `User: ${p.name}`;
+  setPostingEnabled(true);
+}
+
+// ---------- Tabs ----------
+tabs.forEach(t => {
+  t.addEventListener("click", () => {
+    tabs.forEach(x => x.classList.remove("active"));
+    t.classList.add("active");
+    const tab = t.dataset.tab;
+    if(tab === "file"){
+      fileTab.classList.remove("hidden");
+      linkTab.classList.add("hidden");
+    }else{
+      linkTab.classList.remove("hidden");
+      fileTab.classList.add("hidden");
+    }
+  });
 });
 
+// ---------- Profile ----------
+saveProfileBtn.addEventListener("click", () => {
+  const name = nameInput.value.trim();
+  const radius = Number(radiusInput.value);
+  if(!name){
+    profileStatus.innerHTML = "<strong>Status:</strong> Please enter a display name.";
+    return;
+  }
+  saveProfile({ name, radius });
+  refreshProfileUI();
+  renderFeed();
+});
+
+resetProfileBtn.addEventListener("click", () => {
+  localStorage.removeItem(KEY_PROFILE);
+  nameInput.value = "";
+  radiusInput.value = "5";
+  refreshProfileUI();
+  renderFeed();
+});
+
+// ---------- Posting ----------
+clearFileBtn.addEventListener("click", () => {
+  fileInput.value = "";
+  fileTitle.value = "";
+  fileTags.value = "";
+  fileDesc.value = "";
+});
 clearLinkBtn.addEventListener("click", () => {
   linkUrl.value = "";
   linkTitle.value = "";
@@ -88,207 +180,248 @@ clearLinkBtn.addEventListener("click", () => {
   linkDesc.value = "";
 });
 
-async function api(path, opts){
-  const res = await fetch(path, opts);
-  const data = await res.json().catch(() => ({}));
-  if(!res.ok) throw new Error(data.error || "Request failed");
-  return data;
+function readFileAsDataURL(file){
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
 }
 
-postLinkBtn.addEventListener("click", async () => {
-  const author = loadName();
-  if(!author) return;
+postFileBtn.addEventListener("click", async () => {
+  const p = loadProfile();
+  if(!p) return;
+
+  const f = fileInput.files && fileInput.files[0];
+  const title = fileTitle.value.trim();
+  const tags = parseTags(fileTags.value);
+  const desc = fileDesc.value.trim();
+
+  if(!f || !title){
+    postStatus.innerHTML = "<strong>Status:</strong> Choose a file and add a title.";
+    return;
+  }
+
+  const dataUrl = await readFileAsDataURL(f);
+
+  const id = nowId();
+  const shareCode = makeShareCode(id);
+
+  const post = {
+    id,
+    shareCode,
+    type: "file",
+    title,
+    tags,
+    desc,
+    author: p.name,
+    radius: p.radius,
+    milesAway: randomMilesWithin(p.radius),
+    createdAt: Date.now(),
+    fileName: f.name,
+    mime: f.type || "application/octet-stream",
+    dataUrl
+  };
+
+  const posts = loadPosts();
+  posts.unshift(post);
+  savePosts(posts);
+
+  postStatus.innerHTML = `<strong>Status:</strong> File posted. Share code: <strong>${shareCode}</strong>`;
+  clearFileBtn.click();
+  renderFeed();
+});
+
+postLinkBtn.addEventListener("click", () => {
+  const p = loadProfile();
+  if(!p) return;
 
   const url = linkUrl.value.trim();
   const title = linkTitle.value.trim();
+  const tags = parseTags(linkTags.value);
+  const desc = linkDesc.value.trim();
+
   if(!url || !title){
-    postStatus.innerHTML = "<strong>Status:</strong> Add a URL and a title.";
+    postStatus.innerHTML = "<strong>Status:</strong> Add a URL and title.";
     return;
   }
 
-  try{
-    const data = await api("/api/posts/link", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        url,
-        title,
-        tags: parseTags(linkTags.value),
-        desc: linkDesc.value.trim(),
-        author
-      })
-    });
+  const id = nowId();
+  const shareCode = makeShareCode(id);
 
-    const code = data.post.shareCode;
-    postStatus.innerHTML = `<strong>Status:</strong> Posted. Share code: <strong>${escapeHtml(code)}</strong>`;
-    codeInput.value = code;
-    decodedCode.value = code;
-    await renderFeed();
-    window.location.hash = "#broadcast";
-  }catch(e){
-    postStatus.innerHTML = `<strong>Status:</strong> ${escapeHtml(e.message)}`;
-  }
+  const post = {
+    id,
+    shareCode,
+    type: "link",
+    title,
+    tags,
+    desc,
+    author: p.name,
+    radius: p.radius,
+    milesAway: randomMilesWithin(p.radius),
+    createdAt: Date.now(),
+    url
+  };
+
+  const posts = loadPosts();
+  posts.unshift(post);
+  savePosts(posts);
+
+  postStatus.innerHTML = `<strong>Status:</strong> Link posted. Share code: <strong>${shareCode}</strong>`;
+  clearLinkBtn.click();
+  renderFeed();
 });
-
-// ---------- QR Share ----------
-function buildReceiveUrl(code){
-  // when scanned, opens same site and auto-loads code + opens link
-  const u = new URL(window.location.href);
-  u.hash = "";
-  u.searchParams.set("code", normalizeCode(code));
-  return u.toString();
-}
-
-showQrBtn.addEventListener("click", async () => {
-  const code = normalizeCode(codeInput.value);
-  if(!/^DS-[0-9A-Z]{6}$/.test(code)){
-    broadcastStatus.innerHTML = "<strong>Status:</strong> Enter a valid code like <strong>DS-3F9KQ2</strong>.";
-    return;
-  }
-
-  const receiveUrl = buildReceiveUrl(code);
-  qrWrap.classList.remove("hidden");
-  hideQrBtn.disabled = false;
-
-  // Generate QR into canvas (using qrcode library)
-  await QRCode.toCanvas(qrCanvas, receiveUrl, { width: 240, margin: 1 });
-
-  broadcastStatus.innerHTML =
-    `<strong>Status:</strong> QR ready for <strong>${escapeHtml(code)}</strong>. People scan to open instantly.`;
-});
-
-hideQrBtn.addEventListener("click", () => {
-  qrWrap.classList.add("hidden");
-  hideQrBtn.disabled = true;
-  broadcastStatus.innerHTML = "<strong>Status:</strong> QR hidden.";
-});
-
-// ---------- Open by code (receiver) ----------
-async function openByCode(code){
-  const c = normalizeCode(code);
-  if(!/^DS-[0-9A-Z]{6}$/.test(c)){
-    receiveStatus.innerHTML = "<strong>Status:</strong> Enter a valid code like DS-3F9KQ2.";
-    return;
-  }
-
-  receiveStatus.innerHTML = "<strong>Status:</strong> Looking up link...";
-  try{
-    const data = await api(`/api/posts/${encodeURIComponent(c)}`);
-    const post = data.post;
-    receiveStatus.innerHTML = `<strong>Status:</strong> Opening <strong>${escapeHtml(post.title)}</strong>...`;
-    window.open(post.url, "_blank", "noopener");
-  }catch(e){
-    receiveStatus.innerHTML = `<strong>Status:</strong> ${escapeHtml(e.message)} (code not found)`;
-  }
-}
-
-openFromCodeBtn.addEventListener("click", () => openByCode(decodedCode.value));
-
-// Auto-open when QR includes ?code=...
-(function autoFromQuery(){
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get("code");
-  if(code){
-    decodedCode.value = normalizeCode(code);
-    codeInput.value = normalizeCode(code);
-    // optional: auto-open
-    openByCode(code);
-  }
-})();
 
 // ---------- Feed ----------
-async function renderFeed(){
-  const q = (searchInput.value || "").trim().toLowerCase();
-  feedGrid.innerHTML = "";
-
-  try{
-    const data = await api("/api/posts");
-    let posts = data.posts || [];
-
-    if(q){
-      posts = posts.filter(p => {
-        const hay = `${p.title} ${p.desc||""} ${(p.tags||[]).join(" ")} ${p.shareCode}`.toLowerCase();
-        return hay.includes(q);
-      });
-    }
-
-    if(!posts.length){
-      feedGrid.innerHTML = `<div class="callout"><strong>No posts.</strong> Post a link above.</div>`;
-      return;
-    }
-
-    for(const post of posts){
-      const tags = (post.tags||[]).map(t => `<span class="badge">${escapeHtml(t)}</span>`).join("");
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `
-        <div style="font-weight:900; display:flex; justify-content:space-between; gap:10px;">
-          <span>${escapeHtml(post.title)}</span>
-          <span class="badge">Link</span>
-        </div>
-        <div class="meta">
-          By <strong>${escapeHtml(post.author)}</strong> • ${formatTimeAgo(post.createdAt)} • Code: <strong>${escapeHtml(post.shareCode)}</strong>
-        </div>
-        <div class="badges">${tags}</div>
-        <div class="meta" style="margin-top:10px;">${escapeHtml(post.desc || "")}</div>
-        <div class="card-actions">
-          <button class="small-btn" data-action="use" data-code="${escapeHtml(post.shareCode)}">Use code</button>
-          <button class="small-btn" data-action="qr" data-code="${escapeHtml(post.shareCode)}">Show QR</button>
-          <button class="small-btn" data-action="chime" data-code="${escapeHtml(post.shareCode)}">Play chime</button>
-          <a class="small-btn" href="${escapeHtml(post.url)}" target="_blank" rel="noopener">Open link</a>
-        </div>
-      `;
-      card.addEventListener("click", (e) => {
-        const btn = e.target.closest("[data-action]");
-        if(!btn) return;
-        const code = btn.dataset.code;
-        const action = btn.dataset.action;
-
-        codeInput.value = code;
-        decodedCode.value = code;
-
-        if(action === "use"){
-          window.location.hash = "#broadcast";
-          broadcastStatus.innerHTML = `<strong>Status:</strong> Loaded <strong>${escapeHtml(code)}</strong>.`;
-        }
-        if(action === "qr"){
-          window.location.hash = "#broadcast";
-          showQrBtn.click();
-        }
-        if(action === "chime"){
-          window.location.hash = "#broadcast";
-          playChimeForCode(code);
-        }
-      });
-
-      feedGrid.appendChild(card);
-    }
-  }catch(e){
-    feedGrid.innerHTML = `<div class="callout"><strong>Error:</strong> ${escapeHtml(e.message)}</div>`;
-  }
+function matchesSearch(post, q){
+  if(!q) return true;
+  const hay = `${post.title} ${post.desc || ""} ${(post.tags||[]).join(" ")} ${post.author} ${post.shareCode}`.toLowerCase();
+  return hay.includes(q);
 }
 
-refreshBtn.addEventListener("click", renderFeed);
+function renderFeed(){
+  const p = loadProfile();
+  const posts = loadPosts();
+
+  const type = typeFilter.value;
+  const sort = sortFilter.value;
+  const q = searchInput.value.trim().toLowerCase();
+
+  let list = [...posts];
+
+  if(type !== "all"){
+    list = list.filter(x => x.type === type);
+  }
+  list = list.filter(x => matchesSearch(x, q));
+
+  // demo local filter: show items within radius (if profile exists)
+  if(p){
+    const r = Number(p.radius) || 5;
+    list = list.filter(x => Number(x.milesAway) <= r);
+  }
+
+  if(sort === "newest") list.sort((a,b) => b.createdAt - a.createdAt);
+  if(sort === "oldest") list.sort((a,b) => a.createdAt - b.createdAt);
+  if(sort === "title") list.sort((a,b) => (a.title||"").localeCompare(b.title||""));
+
+  feedGrid.innerHTML = "";
+
+  if(list.length === 0){
+    feedGrid.innerHTML = `<div class="callout"><strong>No posts found.</strong> Create a post or adjust filters.</div>`;
+    return;
+  }
+
+  list.forEach(post => {
+    const tags = (post.tags||[]).map(t => `<span class="badge">${escapeHtml(t)}</span>`).join("");
+
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const typeLabel = post.type === "file" ? "File" : "Link";
+
+    card.innerHTML = `
+      <div style="font-weight:900; display:flex; justify-content:space-between; gap:10px;">
+        <span>${escapeHtml(post.title)}</span>
+        <span class="badge">${typeLabel}</span>
+      </div>
+
+      <div class="meta">
+        Posted by <strong>${escapeHtml(post.author)}</strong> • ${escapeHtml(post.milesAway)} mi away • ${formatTimeAgo(post.createdAt)}
+      </div>
+
+      <div class="badges">${tags}</div>
+
+      <div class="meta" style="margin-top:10px;">${escapeHtml(post.desc || "")}</div>
+
+      <div class="meta" style="margin-top:10px;">
+        Share code: <span style="font-weight:900;">${escapeHtml(post.shareCode)}</span>
+      </div>
+
+      <div class="card-actions">
+        <button class="small-btn" data-action="copy" data-code="${escapeHtml(post.shareCode)}">Copy code</button>
+        <button class="small-btn" data-action="chime" data-code="${escapeHtml(post.shareCode)}">Play chime</button>
+        ${post.type === "link"
+          ? `<a class="small-btn" href="${escapeHtml(post.url)}" target="_blank" rel="noopener">Open link</a>`
+          : `<button class="small-btn" data-action="download" data-id="${escapeHtml(post.id)}">Download</button>`
+        }
+      </div>
+    `;
+
+    card.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-action]");
+      if(!btn) return;
+
+      const action = btn.dataset.action;
+
+      if(action === "copy"){
+        navigator.clipboard.writeText(btn.dataset.code || "");
+        btn.textContent = "Copied!";
+        setTimeout(() => btn.textContent = "Copy code", 900);
+      }
+
+      if(action === "download"){
+        downloadPostFile(btn.dataset.id);
+      }
+
+      if(action === "chime"){
+        const code = btn.dataset.code || "";
+        chimeCodeInput.value = code;
+        chimeSendStatus.innerHTML = `<strong>Status:</strong> Loaded code <strong>${escapeHtml(code)}</strong>. Click “Play chime”.`;
+        window.location.hash = "#chime";
+      }
+    });
+
+    feedGrid.appendChild(card);
+  });
+}
+
+function downloadPostFile(id){
+  const posts = loadPosts();
+  const post = posts.find(x => x.id === id);
+  if(!post || post.type !== "file") return;
+
+  const a = document.createElement("a");
+  a.href = post.dataUrl;
+  a.download = post.fileName || "dropshare-file";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+[typeFilter, sortFilter].forEach(el => el.addEventListener("change", renderFeed));
 searchInput.addEventListener("input", renderFeed);
 
-clearAllBtn.addEventListener("click", async () => {
-  try{
-    await api("/api/posts", { method: "DELETE" });
-    await renderFeed();
-  }catch(e){
-    alert(e.message);
-  }
+clearAllBtn.addEventListener("click", () => {
+  localStorage.removeItem(KEY_POSTS);
+  renderFeed();
 });
 
-// ---------- ChimeShare (sound sends code only) ----------
+// ---------- Share code format ----------
+function makeShareCode(id){
+  // DS- + last 6 of base36
+  const base = Number(String(id).slice(-10)).toString(36).toUpperCase().padStart(6, "0");
+  return `DS-${base.slice(-6)}`;
+}
+function normalizeCode(code){
+  return String(code || "").trim().toUpperCase();
+}
+function findPostByShareCode(code){
+  const posts = loadPosts();
+  const target = normalizeCode(code);
+  return posts.find(p => normalizeCode(p.shareCode) === target) || null;
+}
+
+// ---------- ChimeShare (tone encode/decode demo) ----------
+// We encode characters in base36: 0-9, A-Z (36 symbols).
 const SYMBOLS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const START_FREQ = 900;
-const END_FREQ = 1800;
-const BASE_FREQ = 1000;
-const STEP = 20;
-const TONE_MS = 180;
-const GAP_MS = 70;
-const TOLERANCE = 35;
+const START_FREQ = 900;   // start tone
+const END_FREQ   = 1800;  // end tone
+const BASE_FREQ  = 1000;  // symbol 0
+const STEP       = 20;    // 20 Hz per symbol => 1000..1700 Hz
+const TONE_MS    = 180;
+const GAP_MS     = 70;
+const TOLERANCE  = 35;    // Hz
 
 let audioCtx = null;
 let chimeStopFlag = false;
@@ -297,6 +430,7 @@ function getAudioCtx(){
   if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   return audioCtx;
 }
+
 function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 
 async function playTone(freq, ms){
@@ -304,23 +438,31 @@ async function playTone(freq, ms){
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   gain.gain.value = 0.0001;
+
   osc.type = "sine";
   osc.frequency.value = freq;
+
   osc.connect(gain);
   gain.connect(ctx.destination);
+
   osc.start();
+
+  // soft fade in/out to reduce clicks
   const now = ctx.currentTime;
   gain.gain.setValueAtTime(0.0001, now);
   gain.gain.linearRampToValueAtTime(0.12, now + 0.02);
+  gain.gain.linearRampToValueAtTime(0.10, now + Math.max(0.03, ms/1000 - 0.03));
   gain.gain.linearRampToValueAtTime(0.0001, now + ms/1000);
+
   await sleep(ms);
   osc.stop();
 }
 
-function payloadFromCode(code){
+function codeToPayload(code){
+  // expects DS-XXXXXX (only uses the 6 chars)
   const c = normalizeCode(code);
-  const m = c.match(/^DS-([0-9A-Z]{6})$/);
-  return m ? m[1] : null;
+  const match = c.match(/^DS-([0-9A-Z]{6})$/);
+  return match ? match[1] : null;
 }
 
 async function playChimeForCode(code){
@@ -328,19 +470,22 @@ async function playChimeForCode(code){
   stopChimeBtn.disabled = false;
   playChimeBtn.disabled = true;
 
-  const payload = payloadFromCode(code);
+  const payload = codeToPayload(code);
   if(!payload){
-    broadcastStatus.innerHTML = "<strong>Status:</strong> Enter valid code DS-XXXXXX.";
+    chimeSendStatus.innerHTML = "<strong>Status:</strong> Please use a valid code like <strong>DS-AB12CD</strong>.";
     stopChimeBtn.disabled = true;
     playChimeBtn.disabled = false;
     return;
   }
 
-  broadcastStatus.innerHTML = `<strong>Status:</strong> Playing chime for <strong>DS-${escapeHtml(payload)}</strong>...`;
+  chimeSendStatus.innerHTML = `<strong>Status:</strong> Playing chime for <strong>DS-${escapeHtml(payload)}</strong>...`;
 
+  // Start marker
+  if(chimeStopFlag) return;
   await playTone(START_FREQ, 220);
   await sleep(GAP_MS);
 
+  // Symbols
   for(const ch of payload){
     if(chimeStopFlag) break;
     const idx = SYMBOLS.indexOf(ch);
@@ -349,63 +494,84 @@ async function playChimeForCode(code){
     await sleep(GAP_MS);
   }
 
-  if(!chimeStopFlag) await playTone(END_FREQ, 220);
+  // End marker
+  if(!chimeStopFlag){
+    await playTone(END_FREQ, 220);
+  }
 
+  chimeSendStatus.innerHTML = `<strong>Status:</strong> Done. Receiver can decode: <strong>DS-${escapeHtml(payload)}</strong>`;
   stopChimeBtn.disabled = true;
   playChimeBtn.disabled = false;
-  broadcastStatus.innerHTML = `<strong>Status:</strong> Done: <strong>DS-${escapeHtml(payload)}</strong>`;
 }
 
-playChimeBtn.addEventListener("click", () => playChimeForCode(codeInput.value));
+playChimeBtn.addEventListener("click", () => {
+  const code = chimeCodeInput.value.trim();
+  playChimeForCode(code);
+});
 stopChimeBtn.addEventListener("click", () => {
   chimeStopFlag = true;
   stopChimeBtn.disabled = true;
   playChimeBtn.disabled = false;
-  broadcastStatus.innerHTML = "<strong>Status:</strong> Stopped.";
+  chimeSendStatus.innerHTML = "<strong>Status:</strong> Stopped.";
 });
 
-// ---------- Listen & decode (basic demo) ----------
+// ---------- Listening / decoding ----------
 let mediaStream = null;
 let analyser = null;
 let rafId = null;
 let listening = false;
 let decodedChars = [];
+let lastSymbol = null;
 let lastHitAt = 0;
 let sawStart = false;
 
 function nearestSymbolFromFreq(freq){
+  // map to nearest symbol freq
   const idx = Math.round((freq - BASE_FREQ) / STEP);
   if(idx < 0 || idx >= SYMBOLS.length) return null;
   const target = BASE_FREQ + idx * STEP;
   if(Math.abs(freq - target) > TOLERANCE) return null;
   return SYMBOLS[idx];
 }
+
 function peakFrequencyHz(analyserNode, ctx){
   const buffer = new Uint8Array(analyserNode.frequencyBinCount);
   analyserNode.getByteFrequencyData(buffer);
-  let max = -1, maxIndex = 0;
+
+  let max = -1;
+  let maxIndex = 0;
   for(let i=0;i<buffer.length;i++){
-    if(buffer[i] > max){ max = buffer[i]; maxIndex = i; }
+    if(buffer[i] > max){
+      max = buffer[i];
+      maxIndex = i;
+    }
   }
   const nyquist = ctx.sampleRate / 2;
   const freq = (maxIndex / buffer.length) * nyquist;
   return { freq, strength: max };
 }
-function isNear(freq, target){ return Math.abs(freq - target) <= TOLERANCE; }
+
+function isNear(freq, target){
+  return Math.abs(freq - target) <= TOLERANCE;
+}
 
 async function startListening(){
   decodedChars = [];
+  lastSymbol = null;
   lastHitAt = 0;
   sawStart = false;
+  decodedOutput.value = "";
+  applyDecodedBtn.disabled = true;
 
   listenBtn.disabled = true;
   stopListenBtn.disabled = false;
 
   const ctx = getAudioCtx();
+
   try{
     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  }catch{
-    receiveStatus.innerHTML = "<strong>Status:</strong> Microphone denied.";
+  }catch(e){
+    chimeRecvStatus.innerHTML = "<strong>Status:</strong> Microphone denied. Please allow microphone access.";
     listenBtn.disabled = false;
     stopListenBtn.disabled = true;
     return;
@@ -418,7 +584,7 @@ async function startListening(){
   source.connect(analyser);
 
   listening = true;
-  receiveStatus.innerHTML = "<strong>Status:</strong> Listening...";
+  chimeRecvStatus.innerHTML = "<strong>Status:</strong> Listening... hold the phone near the speaker.";
 
   const tick = () => {
     if(!listening) return;
@@ -426,33 +592,41 @@ async function startListening(){
     const { freq, strength } = peakFrequencyHz(analyser, ctx);
     const now = Date.now();
 
+    // ignore very low strength (noise gate)
     if(strength > 110){
       if(!sawStart && isNear(freq, START_FREQ)){
         sawStart = true;
         decodedChars = [];
+        chimeRecvStatus.innerHTML = "<strong>Status:</strong> Start detected. Decoding...";
         lastHitAt = now;
-        receiveStatus.innerHTML = "<strong>Status:</strong> Start detected. Decoding...";
       }
 
       if(sawStart){
         if(isNear(freq, END_FREQ)){
+          // end detected
+          listening = false;
           stopListening();
-          const payload = decodedChars.join("").slice(0,6);
+
+          const payload = decodedChars.join("").slice(0, 6);
+          const fullCode = payload.length === 6 ? `DS-${payload}` : "";
+          decodedOutput.value = fullCode;
+
           if(payload.length === 6){
-            decodedCode.value = `DS-${payload}`;
-            codeInput.value = `DS-${payload}`;
-            receiveStatus.innerHTML = `<strong>Status:</strong> Decoded <strong>DS-${escapeHtml(payload)}</strong>.`;
+            applyDecodedBtn.disabled = false;
+            chimeRecvStatus.innerHTML = `<strong>Status:</strong> Decoded <strong>${escapeHtml(fullCode)}</strong>. Click “Find post”.`;
           }else{
-            receiveStatus.innerHTML = "<strong>Status:</strong> Decoded incomplete. Try again closer/quieter.";
+            chimeRecvStatus.innerHTML = "<strong>Status:</strong> End detected but code incomplete. Try again closer/quieter.";
           }
           return;
         }
 
-        if(now - lastHitAt > (TONE_MS + GAP_MS - 30) && decodedChars.length < 6){
+        // sample a symbol roughly every ~ (TONE_MS + GAP_MS) window
+        if(now - lastHitAt > (TONE_MS + GAP_MS - 30)){
           const sym = nearestSymbolFromFreq(freq);
-          if(sym){
+          if(sym && sym !== lastSymbol && decodedChars.length < 6){
             decodedChars.push(sym);
-            decodedCode.value = `DS-${decodedChars.join("")}`;
+            lastSymbol = sym;
+            decodedOutput.value = `DS-${decodedChars.join("")}`;
             lastHitAt = now;
           }
         }
@@ -482,9 +656,32 @@ function stopListening(){
 listenBtn.addEventListener("click", startListening);
 stopListenBtn.addEventListener("click", () => {
   stopListening();
-  receiveStatus.innerHTML = "<strong>Status:</strong> Stopped listening.";
+  chimeRecvStatus.innerHTML = "<strong>Status:</strong> Stopped listening.";
 });
 
-// Init
-refreshNameUI();
+clearDecodedBtn.addEventListener("click", () => {
+  decodedOutput.value = "";
+  applyDecodedBtn.disabled = true;
+  chimeRecvStatus.innerHTML = "<strong>Status:</strong> Cleared.";
+});
+
+applyDecodedBtn.addEventListener("click", () => {
+  const code = decodedOutput.value.trim();
+  const post = findPostByShareCode(code);
+  if(!post){
+    chimeRecvStatus.innerHTML = `<strong>Status:</strong> Code not found in this browser’s feed. (This demo is local-only.)`;
+    return;
+  }
+
+  chimeRecvStatus.innerHTML = `<strong>Status:</strong> Found: <strong>${escapeHtml(post.title)}</strong>.`;
+  // In demo: open link or download file
+  if(post.type === "link"){
+    window.open(post.url, "_blank", "noopener");
+  }else if(post.type === "file"){
+    downloadPostFile(post.id);
+  }
+});
+
+// ---------- Init ----------
+refreshProfileUI();
 renderFeed();
