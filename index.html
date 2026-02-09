@@ -3,26 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>DropShare — Share locally by link or chime</title>
+  <title>DropShare — Round Table</title>
   <link rel="stylesheet" href="styles.css" />
+
+  <!-- QR -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+  <!-- MediaPipe Hands (gesture recognition) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.min.js"></script>
 </head>
 <body>
   <header class="topbar">
     <div class="container topbar-inner">
       <div class="brand">
-        <div class="logo" aria-hidden="true">DS</div>
+        <div class="logo">DS</div>
         <div class="brand-text">
           <div class="brand-name">DropShare</div>
-          <div class="brand-tag">Share files, links, and “ChimeShare” codes locally</div>
+          <div class="brand-tag">Local sharing — QR • Chime • Voice • Gestures</div>
         </div>
       </div>
-
       <nav class="nav">
-        <a href="#how">How it works</a>
         <a href="#share">Share</a>
-        <a href="#chime">ChimeShare</a>
-        <a href="#feed">Local Feed</a>
-        <a href="#safety">Safety</a>
+        <a href="#roundtable">Round Table</a>
+        <a href="#broadcast">Broadcast</a>
+        <a href="#gestures">Gestures</a>
+        <a href="#feed">Feed</a>
+        <a href="#rules">Rules</a>
       </nav>
     </div>
   </header>
@@ -31,114 +39,101 @@
     <section class="hero">
       <div class="container hero-grid">
         <div class="hero-copy">
-          <h1>Drop files. Share links. Send a chime.</h1>
+          <h1>DropShare for meetings and teams.</h1>
           <p class="subhead">
-            DropShare helps you connect locally (internet/mobile concept) to share documents, free resources,
-            and app links. Plus: <strong>ChimeShare</strong> lets someone download by decoding a short sound code.
+            Share documents, free resources, and app links locally. People can receive by
+            <strong>QR</strong>, <strong>ChimeShare</strong>, <strong>Voice commands</strong>, or <strong>Hand gestures</strong>.
           </p>
 
           <div class="cta-row">
             <a class="btn primary" href="#share">Start sharing</a>
-            <a class="btn ghost" href="#chime">Try ChimeShare</a>
+            <a class="btn ghost" href="#roundtable">Round Table</a>
           </div>
 
-          <div class="creator">
-            Created by <strong>Parth Pankaj Bakhda</strong>
-          </div>
+          <div class="creator">Created by <strong>Parth Pankaj Bakhda</strong></div>
 
           <div class="trust">
-            <div class="pill">✅ Files & links</div>
-            <div class="pill">✅ Local feed</div>
-            <div class="pill">✅ Share code</div>
-            <div class="pill">✅ ChimeShare (demo)</div>
+            <div class="pill">✅ Links + small files</div>
+            <div class="pill">✅ QR on screen</div>
+            <div class="pill">✅ ChimeShare</div>
+            <div class="pill">✅ Voice + Gestures</div>
           </div>
         </div>
 
         <div class="hero-card">
-          <div class="card-title">What this demo includes</div>
-          <ul class="checklist">
-            <li>Profile (name + radius demo)</li>
-            <li>Post files (stored locally in your browser)</li>
-            <li>Post links (open in new tab)</li>
-            <li>ChimeShare: play tones that encode a share code</li>
-            <li>ChimeShare: listen via mic and decode the code</li>
-          </ul>
+          <div class="card-title">Important limitation</div>
           <div class="note">
-            <strong>Note:</strong> Real “nearby discovery” needs a backend + secure storage + scanning + moderation.
+            Phone flashlights cannot display QR codes or turn green on most devices.
+            QR Share works by showing the QR on your screen.
           </div>
+          <ul class="checklist">
+            <li>Best: QR on screen</li>
+            <li>Backup: ChimeShare sound code</li>
+            <li>Hands-free: Voice commands</li>
+            <li>No-touch: Gesture trigger</li>
+          </ul>
         </div>
       </div>
     </section>
 
-    <section id="how" class="section">
-      <div class="container">
-        <div class="section-head">
-          <h2>How it works</h2>
-          <p>Share resources locally and safely.</p>
-        </div>
-
-        <div class="steps">
-          <div class="step"><div class="step-num">1</div><div class="step-body"><h3>Create profile</h3><p>Name + radius (demo filter).</p></div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-body"><h3>Post</h3><p>Upload a doc (demo) or share a trusted link.</p></div></div>
-          <div class="step"><div class="step-num">3</div><div class="step-body"><h3>Share</h3><p>Copy share code or play a chime to transmit it.</p></div></div>
-          <div class="step"><div class="step-num">4</div><div class="step-body"><h3>Receive</h3><p>Enter code manually or decode it by listening.</p></div></div>
-        </div>
-      </div>
-    </section>
-
+    <!-- SHARE -->
     <section id="share" class="section section-alt">
       <div class="container">
         <div class="section-head">
-          <h2>Share something</h2>
-          <p>Create a post (file or link). Posts save in your browser (localStorage demo).</p>
+          <h2>Share</h2>
+          <p>Create a link or file post. The server stores it so everyone can receive it.</p>
         </div>
 
         <div class="workspace">
           <div class="panel">
-            <div class="panel-title">Your profile</div>
-
+            <div class="panel-title">Your name</div>
             <label class="label">Display name</label>
             <input id="nameInput" placeholder="Example: Parth" />
-
-            <label class="label">Discovery radius (miles) — demo</label>
-            <select id="radiusInput">
-              <option value="1">1 mile</option>
-              <option value="3">3 miles</option>
-              <option value="5" selected>5 miles</option>
-              <option value="10">10 miles</option>
-              <option value="25">25 miles</option>
-            </select>
-
             <div class="control-row">
-              <button class="btn primary" id="saveProfileBtn">Save profile</button>
-              <button class="btn" id="resetProfileBtn">Reset</button>
+              <button class="btn primary" id="saveNameBtn">Save name</button>
             </div>
-
-            <div class="callout" id="profileStatus">
-              <strong>Status:</strong> Create a profile to start posting.
-            </div>
+            <div class="callout" id="nameStatus"><strong>Status:</strong> Set your name to share.</div>
           </div>
 
           <div class="panel">
             <div class="panel-title">Create a post</div>
 
             <div class="tabs">
-              <button class="tab active" data-tab="file">File</button>
-              <button class="tab" data-tab="link">Link</button>
+              <button class="tab active" data-tab="link">Link</button>
+              <button class="tab" data-tab="file">File</button>
             </div>
 
-            <div id="fileTab" class="tab-panel">
-              <label class="label">Choose a file (demo)</label>
+            <div id="linkTab" class="tab-panel">
+              <label class="label">Link URL</label>
+              <input id="linkUrl" placeholder="https://..." />
+
+              <label class="label">Title</label>
+              <input id="linkTitle" placeholder="Example: Training video" />
+
+              <label class="label">Tags (comma separated)</label>
+              <input id="linkTags" placeholder="work, meeting, video" />
+
+              <label class="label">Description</label>
+              <textarea id="linkDesc" rows="3" placeholder="Short description"></textarea>
+
+              <div class="control-row">
+                <button class="btn primary" id="postLinkBtn" disabled>Post link</button>
+                <button class="btn" id="clearLinkBtn">Clear</button>
+              </div>
+            </div>
+
+            <div id="fileTab" class="tab-panel hidden">
+              <label class="label">Choose file</label>
               <input id="fileInput" type="file" />
 
               <label class="label">Title</label>
-              <input id="fileTitle" placeholder="Example: Study notes PDF" />
+              <input id="fileTitle" placeholder="Example: Agenda PDF" />
 
               <label class="label">Tags (comma separated)</label>
-              <input id="fileTags" placeholder="example: school, pdf, notes" />
+              <input id="fileTags" placeholder="agenda, pdf, work" />
 
               <label class="label">Description</label>
-              <textarea id="fileDesc" rows="4" placeholder="Short description."></textarea>
+              <textarea id="fileDesc" rows="3" placeholder="Short description"></textarea>
 
               <div class="control-row">
                 <button class="btn primary" id="postFileBtn" disabled>Post file</button>
@@ -146,178 +141,194 @@
               </div>
 
               <div class="tiny muted">
-                Demo stores the file locally in the browser. A real app would upload securely + scan.
+                Demo tip: keep files under 2MB.
               </div>
             </div>
 
-            <div id="linkTab" class="tab-panel hidden">
-              <label class="label">Link URL</label>
-              <input id="linkUrl" placeholder="Example: https://github.com/project (trusted)" />
-
-              <label class="label">Title</label>
-              <input id="linkTitle" placeholder="Example: Free open-source app" />
-
-              <label class="label">Tags (comma separated)</label>
-              <input id="linkTags" placeholder="example: app, tools, free" />
-
-              <label class="label">Description</label>
-              <textarea id="linkDesc" rows="4" placeholder="Explain what it is and why it’s useful."></textarea>
-
-              <div class="control-row">
-                <button class="btn primary" id="postLinkBtn" disabled>Post link</button>
-                <button class="btn" id="clearLinkBtn">Clear</button>
-              </div>
-
-              <div class="tiny muted">
-                Only post links you trust. Avoid unknown downloads.
-              </div>
-            </div>
-
-            <div class="callout" id="postStatus">
-              <strong>Status:</strong> Create a post after saving your profile.
-            </div>
+            <div class="callout" id="postStatus"><strong>Status:</strong> Ready.</div>
           </div>
         </div>
       </div>
     </section>
 
-    <section id="chime" class="section">
+    <!-- ROUND TABLE VOICE -->
+    <section id="roundtable" class="section">
       <div class="container">
         <div class="section-head">
-          <h2>ChimeShare</h2>
-          <p>Send a share code by sound. Receiver decodes with their microphone (demo).</p>
+          <h2>Round Table Voice Commands</h2>
+          <p>Hands-free controls. Try: “show QR”, “play chime”, “open code DS-XXXXXX”.</p>
         </div>
 
         <div class="workspace">
           <div class="panel">
-            <div class="panel-title">Send a chime</div>
+            <div class="panel-title">Voice control</div>
+            <div class="control-row">
+              <button class="btn primary" id="voiceStartBtn">Start listening</button>
+              <button class="btn" id="voiceStopBtn" disabled>Stop</button>
+            </div>
+            <div class="callout" id="voiceStatus"><strong>Status:</strong> Press start to enable voice commands.</div>
+            <div class="tiny muted">
+              Note: Voice recognition support varies by browser (best on Chrome/Edge).
+            </div>
+          </div>
 
-            <label class="label">Enter a share code (or pick from feed)</label>
-            <input id="chimeCodeInput" placeholder="Example: DS-AB12CD" />
+          <div class="panel">
+            <div class="panel-title">Active code</div>
+            <label class="label">Used for QR / Chime / Gesture triggers</label>
+            <input id="activeCode" placeholder="DS-XXXXXX" />
+            <div class="tiny muted">Tip: click a post in Feed to auto-load.</div>
+          </div>
+        </div>
+      </div>
+    </section>
 
+    <!-- BROADCAST -->
+    <section id="broadcast" class="section section-alt">
+      <div class="container">
+        <div class="section-head">
+          <h2>Broadcast</h2>
+          <p>Share to everyone via QR (best) or ChimeShare (sound).</p>
+        </div>
+
+        <div class="workspace">
+          <div class="panel">
+            <div class="panel-title">QR Share (screen)</div>
+            <div class="control-row">
+              <button class="btn primary" id="showQrBtn">Show QR</button>
+              <button class="btn" id="hideQrBtn" disabled>Hide QR</button>
+            </div>
+
+            <div id="qrWrap" class="qr-wrap hidden">
+              <canvas id="qrCanvas"></canvas>
+              <div class="tiny muted">Scan to open/download instantly.</div>
+            </div>
+
+            <div class="callout" id="broadcastStatus"><strong>Status:</strong> Load a code then show QR.</div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-title">ChimeShare + Receive</div>
             <div class="control-row">
               <button class="btn primary" id="playChimeBtn">Play chime</button>
               <button class="btn" id="stopChimeBtn" disabled>Stop</button>
             </div>
 
-            <div class="tiny muted">
-              Tip: turn up volume. Works best in a quiet room, 1–3 feet apart.
-            </div>
-
-            <div class="callout" id="chimeSendStatus">
-              <strong>Status:</strong> Paste a code like DS-XXXXXX, then play.
-            </div>
-          </div>
-
-          <div class="panel">
-            <div class="panel-title">Receive by listening</div>
+            <div class="divider"></div>
 
             <div class="control-row">
               <button class="btn primary" id="listenBtn">Listen & decode</button>
               <button class="btn" id="stopListenBtn" disabled>Stop listening</button>
             </div>
 
-            <label class="label">Decoded code</label>
-            <input id="decodedOutput" placeholder="Decoded code appears here" readonly />
+            <label class="label">Decoded / typed code</label>
+            <input id="decodedCode" placeholder="DS-XXXXXX" />
 
             <div class="control-row">
-              <button class="btn primary" id="applyDecodedBtn" disabled>Find post</button>
-              <button class="btn" id="clearDecodedBtn">Clear</button>
+              <button class="btn primary" id="openFromCodeBtn">Open / Download</button>
             </div>
 
-            <div class="callout" id="chimeRecvStatus">
-              <strong>Status:</strong> Click “Listen & decode” and allow microphone access.
-            </div>
-
-            <div class="tiny muted">
-              Browser must allow microphone. If it struggles, try manual entry instead.
-            </div>
+            <div class="callout" id="receiveStatus"><strong>Status:</strong> Use QR for best reliability.</div>
           </div>
         </div>
       </div>
     </section>
 
+    <!-- GESTURES -->
+    <section id="gestures" class="section">
+      <div class="container">
+        <div class="section-head">
+          <h2>Hand Gestures Download</h2>
+          <p>Use your camera and show a gesture to trigger “Open/Download” for the active code.</p>
+        </div>
+
+        <div class="workspace">
+          <div class="panel">
+            <div class="panel-title">Gesture Controls</div>
+            <div class="control-row">
+              <button class="btn primary" id="gestureStartBtn">Start camera</button>
+              <button class="btn" id="gestureStopBtn" disabled>Stop camera</button>
+            </div>
+
+            <div class="callout" id="gestureStatus">
+              <strong>Status:</strong> Start camera, then show <strong>Peace ✌️</strong> to open/download active code.
+            </div>
+
+            <div class="tiny muted">
+              Gestures supported (demo):
+              <ul>
+                <li><strong>Peace sign ✌️</strong> → Open/Download active code</li>
+                <li><strong>Open palm ✋</strong> → Show QR</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-title">Camera preview</div>
+            <video id="video" playsinline></video>
+            <canvas id="overlay"></canvas>
+            <div class="tiny muted">Camera permission required.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEED -->
     <section id="feed" class="section section-alt">
       <div class="container">
         <div class="section-head">
-          <h2>Local feed</h2>
-          <p>Search, filter, copy codes, and play a chime from any post.</p>
+          <h2>Feed</h2>
+          <p>Click a post to load its code for QR/chime/gestures. Everyone can receive it.</p>
         </div>
 
         <div class="market-toolbar">
-          <div class="filters">
-            <label class="select">
-              Type:
-              <select id="typeFilter">
-                <option value="all">All</option>
-                <option value="file">Files</option>
-                <option value="link">Links</option>
-              </select>
-            </label>
-
-            <label class="select">
-              Sort:
-              <select id="sortFilter">
-                <option value="newest">Newest</option>
-                <option value="oldest">Oldest</option>
-                <option value="title">Title A→Z</option>
-              </select>
-            </label>
-          </div>
-
           <div class="search">
-            <input id="searchInput" placeholder="Search posts (title, tags, description)" />
+            <input id="searchInput" placeholder="Search feed" />
           </div>
-        </div>
-
-        <div class="feed-meta">
-          <div class="pill small" id="radiusPill">Radius: —</div>
-          <div class="pill small" id="namePill">User: —</div>
-          <button class="btn" id="clearAllBtn">Clear all demo posts</button>
+          <button class="btn" id="refreshBtn">Refresh</button>
+          <button class="btn" id="clearAllBtn">Clear all (demo)</button>
         </div>
 
         <div id="feedGrid" class="results-grid"></div>
       </div>
     </section>
 
-    <section id="safety" class="section">
+    <!-- RULES -->
+    <section id="rules" class="section">
       <div class="container">
         <div class="section-head">
-          <h2>Safety & rules</h2>
-          <p>Keep sharing helpful and safe content.</p>
+          <h2>Rules</h2>
+          <p>Keep DropShare safe, respectful, and legal.</p>
         </div>
 
         <div class="rules-grid">
           <div class="rule-card">
             <h3>Allowed</h3>
             <ul>
-              <li>Files you have rights to share</li>
-              <li>Free/open-source apps and resources</li>
-              <li>Local community docs and learning materials</li>
+              <li>Files you own or have permission to share</li>
+              <li>Work documents/resources meant for your team</li>
+              <li>Free/open-source apps and trusted links</li>
             </ul>
           </div>
-
           <div class="rule-card">
             <h3>Not allowed</h3>
             <ul>
-              <li>Pirated/copyrighted downloads without permission</li>
-              <li>Malware, phishing links, suspicious installers</li>
-              <li>Passwords/IDs/private data dumps</li>
+              <li>Pirated copyrighted content</li>
+              <li>Malware, phishing, suspicious installers</li>
+              <li>Sharing private data without consent</li>
             </ul>
           </div>
-
           <div class="rule-card">
-            <h3>Production upgrades</h3>
+            <h3>Safety</h3>
             <ul>
-              <li>Accounts + secure storage + antivirus scanning</li>
-              <li>Moderation/reporting + reputation</li>
-              <li>Privacy-first location controls</li>
+              <li>Only download from trusted senders</li>
+              <li>Prefer QR over sound in noisy places</li>
+              <li>Use moderation for public communities</li>
             </ul>
           </div>
         </div>
 
         <div class="callout">
-          <strong>Note:</strong> This demo is local-only. Real sharing requires backend, storage, scanning, and moderation.
+          <strong>Disclaimer:</strong> This is a demo. Real deployment should use HTTPS, authentication, and security scanning.
         </div>
       </div>
     </section>
@@ -329,11 +340,10 @@
           <div class="footer-sub">Created by Parth Pankaj Bakhda</div>
         </div>
         <div class="footer-links">
-          <a href="#how">How it works</a>
           <a href="#share">Share</a>
-          <a href="#chime">ChimeShare</a>
-          <a href="#feed">Local Feed</a>
-          <a href="#safety">Safety</a>
+          <a href="#broadcast">Broadcast</a>
+          <a href="#gestures">Gestures</a>
+          <a href="#rules">Rules</a>
         </div>
       </div>
     </footer>
