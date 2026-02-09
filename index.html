@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>DropShare — Share files and links locally</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">DS</div>
+        <div class="brand-text">
+          <div class="brand-name">DropShare</div>
+          <div class="brand-tag">Share documents & links with people nearby</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a href="#how">How it works</a>
+        <a href="#share">Share</a>
+        <a href="#feed">Local Feed</a>
+        <a href="#safety">Safety</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <h1>Drop files. Share links. Connect locally.</h1>
+          <p class="subhead">
+            DropShare is a simple concept: connect with people nearby (internet/mobile),
+            share documents and free content links, and discover useful resources posted by your local community.
+          </p>
+
+          <div class="cta-row">
+            <a class="btn primary" href="#share">Start sharing</a>
+            <a class="btn ghost" href="#feed">Browse local feed</a>
+          </div>
+
+          <div class="creator">
+            Created by <strong>Parth Pankaj Bakhda</strong>
+          </div>
+
+          <div class="trust">
+            <div class="pill">✅ Files & links</div>
+            <div class="pill">✅ Local radius filter</div>
+            <div class="pill">✅ Search + tags</div>
+            <div class="pill">✅ Share code (demo)</div>
+          </div>
+        </div>
+
+        <div class="hero-card">
+          <div class="card-title">What this demo includes</div>
+          <ul class="checklist">
+            <li>Create a local profile (name + radius)</li>
+            <li>Post a file (stored locally in browser for demo)</li>
+            <li>Post a link (apps/resources)</li>
+            <li>Auto-feed with search + filters</li>
+            <li>Copy a share code for quick sharing</li>
+          </ul>
+          <div class="note">
+            <strong>Note:</strong> This is a front-end demo. Real local discovery requires a backend + auth + storage.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how" class="section">
+      <div class="container">
+        <div class="section-head">
+          <h2>How it works</h2>
+          <p>Post resources, discover nearby content, and share safely.</p>
+        </div>
+
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <h3>Create profile</h3>
+              <p>Pick a display name and your discovery radius.</p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <h3>Share</h3>
+              <p>Upload a doc (demo) or post a link to free content/apps.</p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <h3>Discover</h3>
+              <p>Browse the local feed and filter by type, tags, and distance.</p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <h3>Keep it safe</h3>
+              <p>Community rules, reporting, and verified sources (future).</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="share" class="section section-alt">
+      <div class="container">
+        <div class="section-head">
+          <h2>Share something</h2>
+          <p>Create a post (file or link). This demo stores posts in your browser (localStorage).</p>
+        </div>
+
+        <div class="workspace">
+          <div class="panel">
+            <div class="panel-title">Your profile</div>
+
+            <label class="label">Display name</label>
+            <input id="nameInput" placeholder="Example: Parth" />
+
+            <label class="label">Discovery radius (miles) — demo</label>
+            <select id="radiusInput">
+              <option value="1">1 mile</option>
+              <option value="3">3 miles</option>
+              <option value="5" selected>5 miles</option>
+              <option value="10">10 miles</option>
+              <option value="25">25 miles</option>
+            </select>
+
+            <div class="control-row">
+              <button class="btn primary" id="saveProfileBtn">Save profile</button>
+              <button class="btn" id="resetProfileBtn">Reset</button>
+            </div>
+
+            <div class="callout" id="profileStatus">
+              <strong>Status:</strong> Create a profile to start posting.
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-title">Create a post</div>
+
+            <div class="tabs">
+              <button
